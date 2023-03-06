@@ -488,6 +488,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         sample: torch.FloatTensor,
         timestep: Union[torch.Tensor, float, int],
         encoder_hidden_states: torch.Tensor,
+        deep_guidance_scale: Optional[float] = 1,
         class_labels: Optional[torch.Tensor] = None,
         timestep_cond: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
@@ -501,6 +502,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             sample (`torch.FloatTensor`): (batch, channel, height, width) noisy inputs tensor
             timestep (`torch.FloatTensor` or `float` or `int`): (batch) timesteps
             encoder_hidden_states (`torch.FloatTensor`): (batch, sequence_length, feature_dim) encoder hidden states
+            deep_guidance_scale (`float`) *optional*, defaults to `1`): for values different from 1, will guide middle layer activations
             return_dict (`bool`, *optional*, defaults to `True`):
                 Whether or not to return a [`models.unet_2d_condition.UNet2DConditionOutput`] instead of a plain tuple.
             cross_attention_kwargs (`dict`, *optional*):
@@ -522,6 +524,9 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         forward_upsample_size = False
         upsample_size = None
+
+        # if deep_guidance_scale is not 1, we need to do deep guidance
+        do_deep_guidance = (deep_guidance_scale != 1)
 
         if any(s % default_overall_up_factor != 0 for s in sample.shape[-2:]):
             logger.info("Forward upsample size to force interpolation output size.")
@@ -611,6 +616,16 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 attention_mask=attention_mask,
                 cross_attention_kwargs=cross_attention_kwargs,
             )
+
+            # we chunk the output in two, then scale the second half (conditioned) using 
+            # classifier free guidance formula, and then concatenate the two halves.
+            if do_deep_guidance:
+                # check size of first dimension is even
+                if sample.shape[0] % 2 == 0:
+                    raise ValueError("Sample size must be even for deep guidance.")
+                sample_uncond, sample_cond = torch.chunk(sample, 2)
+                sample_cond = sample_uncond + (sample_cond - sample_uncond) * deep_guidance_scale
+                sample = torch.cat([sample_uncond, sample_cond])
 
         if mid_block_additional_residual is not None:
             sample += mid_block_additional_residual

@@ -279,6 +279,7 @@ class StableDiffusionPipeline(DiffusionPipeline):
         device,
         num_images_per_prompt,
         do_classifier_free_guidance,
+        do_deep_guidance=False,
         negative_prompt=None,
         prompt_embeds: Optional[torch.FloatTensor] = None,
         negative_prompt_embeds: Optional[torch.FloatTensor] = None,
@@ -295,6 +296,8 @@ class StableDiffusionPipeline(DiffusionPipeline):
                 number of images that should be generated per prompt
             do_classifier_free_guidance (`bool`):
                 whether to use classifier free guidance or not
+            do_deep_guidance (`bool`, *optional*, defaults to `False`):
+                whether to use deep guidance or not
             negative_prompt (`str` or `List[str]`, *optional*):
                 The prompt or prompts not to guide the image generation. If not defined, one has to pass
                 `negative_prompt_embeds`. instead. If not defined, one has to pass `negative_prompt_embeds`. instead.
@@ -355,47 +358,47 @@ class StableDiffusionPipeline(DiffusionPipeline):
         prompt_embeds = prompt_embeds.view(bs_embed * num_images_per_prompt, seq_len, -1)
 
         # get unconditional embeddings for classifier free guidance
-        if do_classifier_free_guidance and negative_prompt_embeds is None:
-            uncond_tokens: List[str]
-            if negative_prompt is None:
-                uncond_tokens = [""] * batch_size
-            elif type(prompt) is not type(negative_prompt):
-                raise TypeError(
-                    f"`negative_prompt` should be the same type to `prompt`, but got {type(negative_prompt)} !="
-                    f" {type(prompt)}."
+        if do_classifier_free_guidance or do_deep_guidance:
+            if negative_prompt_embeds is None:
+                uncond_tokens: List[str]
+                if negative_prompt is None:
+                    uncond_tokens = [""] * batch_size
+                elif type(prompt) is not type(negative_prompt):
+                    raise TypeError(
+                        f"`negative_prompt` should be the same type to `prompt`, but got {type(negative_prompt)} !="
+                        f" {type(prompt)}."
+                    )
+                elif isinstance(negative_prompt, str):
+                    uncond_tokens = [negative_prompt]
+                elif batch_size != len(negative_prompt):
+                    raise ValueError(
+                        f"`negative_prompt`: {negative_prompt} has batch size {len(negative_prompt)}, but `prompt`:"
+                        f" {prompt} has batch size {batch_size}. Please make sure that passed `negative_prompt` matches"
+                        " the batch size of `prompt`."
+                    )
+                else:
+                    uncond_tokens = negative_prompt
+
+                max_length = prompt_embeds.shape[1]
+                uncond_input = self.tokenizer(
+                    uncond_tokens,
+                    padding="max_length",
+                    max_length=max_length,
+                    truncation=True,
+                    return_tensors="pt",
                 )
-            elif isinstance(negative_prompt, str):
-                uncond_tokens = [negative_prompt]
-            elif batch_size != len(negative_prompt):
-                raise ValueError(
-                    f"`negative_prompt`: {negative_prompt} has batch size {len(negative_prompt)}, but `prompt`:"
-                    f" {prompt} has batch size {batch_size}. Please make sure that passed `negative_prompt` matches"
-                    " the batch size of `prompt`."
+
+                if hasattr(self.text_encoder.config, "use_attention_mask") and self.text_encoder.config.use_attention_mask:
+                    attention_mask = uncond_input.attention_mask.to(device)
+                else:
+                    attention_mask = None
+
+                negative_prompt_embeds = self.text_encoder(
+                    uncond_input.input_ids.to(device),
+                    attention_mask=attention_mask,
                 )
-            else:
-                uncond_tokens = negative_prompt
+                negative_prompt_embeds = negative_prompt_embeds[0]
 
-            max_length = prompt_embeds.shape[1]
-            uncond_input = self.tokenizer(
-                uncond_tokens,
-                padding="max_length",
-                max_length=max_length,
-                truncation=True,
-                return_tensors="pt",
-            )
-
-            if hasattr(self.text_encoder.config, "use_attention_mask") and self.text_encoder.config.use_attention_mask:
-                attention_mask = uncond_input.attention_mask.to(device)
-            else:
-                attention_mask = None
-
-            negative_prompt_embeds = self.text_encoder(
-                uncond_input.input_ids.to(device),
-                attention_mask=attention_mask,
-            )
-            negative_prompt_embeds = negative_prompt_embeds[0]
-
-        if do_classifier_free_guidance:
             # duplicate unconditional embeddings for each generation per prompt, using mps friendly method
             seq_len = negative_prompt_embeds.shape[1]
 
@@ -404,7 +407,7 @@ class StableDiffusionPipeline(DiffusionPipeline):
             negative_prompt_embeds = negative_prompt_embeds.repeat(1, num_images_per_prompt, 1)
             negative_prompt_embeds = negative_prompt_embeds.view(batch_size * num_images_per_prompt, seq_len, -1)
 
-            # For classifier free guidance, we need to do two forward passes.
+            # For classifier free guidance or deep guidance, we need to do two forward passes.
             # Here we concatenate the unconditional and text embeddings into a single batch
             # to avoid doing two forward passes
             prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds])
@@ -519,6 +522,7 @@ class StableDiffusionPipeline(DiffusionPipeline):
         width: Optional[int] = None,
         num_inference_steps: int = 50,
         guidance_scale: float = 7.5,
+        deep_guidance_scale: float = 1.0,
         negative_prompt: Optional[Union[str, List[str]]] = None,
         num_images_per_prompt: Optional[int] = 1,
         eta: float = 0.0,
@@ -552,6 +556,9 @@ class StableDiffusionPipeline(DiffusionPipeline):
                 Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
                 1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
                 usually at the expense of lower image quality.
+            deep_guidance_scale (`float`, *optional*, defaults to 1.0):
+                Diffusion guidance, but on the latent space of the diffusion denoising process, i.e. internal 
+                representations in the unet.
             negative_prompt (`str` or `List[str]`, *optional*):
                 The prompt or prompts not to guide the image generation. If not defined, one has to pass
                 `negative_prompt_embeds`. instead. If not defined, one has to pass `negative_prompt_embeds`. instead.
@@ -624,12 +631,17 @@ class StableDiffusionPipeline(DiffusionPipeline):
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
 
+        # deep_guidance_scale is analogous to guidance_scale, but in the latent space of the diffusion denoising process.
+        # 'deep_guidance_scale = 1' corresponds to doing no classifier free deep guidance.
+        do_deep_guidance = (deep_guidance_scale != 1.0)
+
         # 3. Encode input prompt
         prompt_embeds = self._encode_prompt(
             prompt,
             device,
             num_images_per_prompt,
             do_classifier_free_guidance,
+            do_deep_guidance,
             negative_prompt,
             prompt_embeds=prompt_embeds,
             negative_prompt_embeds=negative_prompt_embeds,
@@ -659,8 +671,8 @@ class StableDiffusionPipeline(DiffusionPipeline):
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
-                # expand the latents if we are doing classifier free guidance
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                # expand the latents if we are doing classifier free guidance or deep guidance
+                latent_model_input = torch.cat([latents] * 2) if (do_classifier_free_guidance or do_deep_guidance) else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
                 # predict the noise residual
@@ -668,13 +680,18 @@ class StableDiffusionPipeline(DiffusionPipeline):
                     latent_model_input,
                     t,
                     encoder_hidden_states=prompt_embeds,
+                    deep_guidance_scale=deep_guidance_scale,
                     cross_attention_kwargs=cross_attention_kwargs,
                 ).sample
 
-                # perform guidance
-                if do_classifier_free_guidance:
+                # split the conditioned prediction from unconditioned one. if we are only doing deep guidance, then
+                # keep only the conditioned prediction, o/w if we are also doing classifier free guidance, then extrapolate
+                if do_classifier_free_guidance or do_deep_guidance:
                     noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                    if do_classifier_free_guidance:
+                        noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                    else:
+                        noise_pred = noise_pred_text
 
                 # compute the previous noisy sample x_t -> x_t-1
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
