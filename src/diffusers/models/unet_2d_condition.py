@@ -625,8 +625,8 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             # classifier free guidance formula, and then concatenate the two halves.
             if do_deep_guidance:
                 # check size of first dimension is even
-                if sample.shape[0] % 2 == 0:
-                    raise ValueError("Sample shape is " + str(sample.shape) + ".")
+                if list(sample.shape)[0] % 2 != 0:
+                    raise ValueError("Sample shape is " + str(sample.shape) + " , first dim must be even!")
                 sample_uncond, sample_cond = torch.chunk(sample, 2)
                 sample_cond = sample_uncond + (sample_cond - sample_uncond) * deep_guidance_scale
                 sample = torch.cat([sample_uncond, sample_cond])
