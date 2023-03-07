@@ -20,7 +20,7 @@ import PIL
 import torch
 from transformers import CLIPFeatureExtractor
 
-from diffusers.utils import is_accelerate_available
+from src.diffusers.utils import is_accelerate_available
 
 from ...models import AutoencoderKL, UNet2DConditionModel
 from ...schedulers import DDIMScheduler, LMSDiscreteScheduler, PNDMScheduler
