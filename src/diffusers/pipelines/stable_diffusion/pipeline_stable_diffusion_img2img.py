@@ -48,7 +48,7 @@ EXAMPLE_DOC_STRING = """
         >>> from PIL import Image
         >>> from io import BytesIO
 
-        >>> from diffusers import StableDiffusionImg2ImgPipeline
+        >>> from src.diffusers import StableDiffusionImg2ImgPipeline
 
         >>> device = "cuda"
         >>> model_id_or_path = "runwayml/stable-diffusion-v1-5"

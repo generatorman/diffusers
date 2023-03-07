@@ -718,7 +718,7 @@ class StableDiffusionInpaintPipeline(DiffusionPipeline):
         >>> import torch
         >>> from io import BytesIO
 
-        >>> from diffusers import StableDiffusionInpaintPipeline
+        >>> from src.diffusers import StableDiffusionInpaintPipeline
 
 
         >>> def download_image(url):

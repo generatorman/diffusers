@@ -72,7 +72,7 @@ EXAMPLE_DOC_STRING = """
         >>> import requests
         >>> import torch
 
-        >>> from diffusers import DDIMScheduler, StableDiffusionPix2PixZeroPipeline
+        >>> from src.diffusers import DDIMScheduler, StableDiffusionPix2PixZeroPipeline
 
 
         >>> def download(embedding_url, local_filepath):
@@ -112,7 +112,7 @@ EXAMPLE_INVERT_DOC_STRING = """
         ```py
         >>> import torch
         >>> from transformers import BlipForConditionalGeneration, BlipProcessor
-        >>> from diffusers import DDIMScheduler, DDIMInverseScheduler, StableDiffusionPix2PixZeroPipeline
+        >>> from src.diffusers import DDIMScheduler, DDIMInverseScheduler, StableDiffusionPix2PixZeroPipeline
 
         >>> import requests
         >>> from PIL import Image

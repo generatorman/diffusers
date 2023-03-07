@@ -19,7 +19,7 @@ import PIL
 import torch
 from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection
 
-from diffusers.utils.import_utils import is_accelerate_available
+from src.diffusers.utils.import_utils import is_accelerate_available
 
 from ...models import AutoencoderKL, UNet2DConditionModel
 from ...models.embeddings import get_timestep_embedding
@@ -39,7 +39,7 @@ EXAMPLE_DOC_STRING = """
         >>> from PIL import Image
         >>> from io import BytesIO
 
-        >>> from diffusers import StableUnCLIPImg2ImgPipeline
+        >>> from src.diffusers import StableUnCLIPImg2ImgPipeline
 
         >>> pipe = StableUnCLIPImg2ImgPipeline.from_pretrained(
         ...     "fusing/stable-unclip-2-1-l-img2img", torch_dtype=torch.float16

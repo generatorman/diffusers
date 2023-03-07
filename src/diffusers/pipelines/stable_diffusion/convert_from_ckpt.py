@@ -32,7 +32,7 @@ from transformers import (
     CLIPVisionModelWithProjection,
 )
 
-from diffusers import (
+from src.diffusers import (
     AutoencoderKL,
     ControlNetModel,
     DDIMScheduler,
@@ -52,10 +52,10 @@ from diffusers import (
     UnCLIPScheduler,
     UNet2DConditionModel,
 )
-from diffusers.pipelines.latent_diffusion.pipeline_latent_diffusion import LDMBertConfig, LDMBertModel
-from diffusers.pipelines.paint_by_example import PaintByExampleImageEncoder, PaintByExamplePipeline
-from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
-from diffusers.pipelines.stable_diffusion.stable_unclip_image_normalizer import StableUnCLIPImageNormalizer
+from src.diffusers.pipelines.latent_diffusion.pipeline_latent_diffusion import LDMBertConfig, LDMBertModel
+from src.diffusers.pipelines.paint_by_example import PaintByExampleImageEncoder, PaintByExamplePipeline
+from src.diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
+from src.diffusers.pipelines.stable_diffusion.stable_unclip_image_normalizer import StableUnCLIPImageNormalizer
 
 from ...utils import is_omegaconf_available, is_safetensors_available, logging
 from ...utils.import_utils import BACKENDS_MAPPING

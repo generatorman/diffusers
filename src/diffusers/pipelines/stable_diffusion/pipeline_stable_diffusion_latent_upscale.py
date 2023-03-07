@@ -341,7 +341,7 @@ class StableDiffusionLatentUpscalePipeline(DiffusionPipeline):
 
         Examples:
         ```py
-        >>> from diffusers import StableDiffusionLatentUpscalePipeline, StableDiffusionPipeline
+        >>> from src.diffusers import StableDiffusionLatentUpscalePipeline, StableDiffusionPipeline
         >>> import torch
 
 

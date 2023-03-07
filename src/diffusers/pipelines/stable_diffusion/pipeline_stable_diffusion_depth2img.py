@@ -563,7 +563,7 @@ class StableDiffusionDepth2ImgPipeline(DiffusionPipeline):
         >>> import requests
         >>> from PIL import Image
 
-        >>> from diffusers import StableDiffusionDepth2ImgPipeline
+        >>> from src.diffusers import StableDiffusionDepth2ImgPipeline
 
         >>> pipe = StableDiffusionDepth2ImgPipeline.from_pretrained(
         ...     "stabilityai/stable-diffusion-2-depth",

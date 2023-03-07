@@ -31,7 +31,7 @@ EXAMPLE_DOC_STRING = """
     Examples:
         ```py
         >>> import torch
-        >>> from diffusers import StableDiffusionPanoramaPipeline, DDIMScheduler
+        >>> from src.diffusers import StableDiffusionPanoramaPipeline, DDIMScheduler
 
         >>> model_ckpt = "stabilityai/stable-diffusion-2-base"
         >>> scheduler = DDIMScheduler.from_pretrained(model_ckpt, subfolder="scheduler")

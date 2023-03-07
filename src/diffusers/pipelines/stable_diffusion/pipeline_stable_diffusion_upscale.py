@@ -450,7 +450,7 @@ class StableDiffusionUpscalePipeline(DiffusionPipeline):
         >>> import requests
         >>> from PIL import Image
         >>> from io import BytesIO
-        >>> from diffusers import StableDiffusionUpscalePipeline
+        >>> from src.diffusers import StableDiffusionUpscalePipeline
         >>> import torch
 
         >>> # load model and scheduler

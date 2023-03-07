@@ -34,7 +34,7 @@ EXAMPLE_DOC_STRING = """
     Examples:
         ```py
         >>> import torch
-        >>> from diffusers import StableDiffusionSAGPipeline
+        >>> from src.diffusers import StableDiffusionSAGPipeline
 
         >>> pipe = StableDiffusionSAGPipeline.from_pretrained(
         ...     "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16

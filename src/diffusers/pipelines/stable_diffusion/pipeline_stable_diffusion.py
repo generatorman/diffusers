@@ -41,7 +41,7 @@ EXAMPLE_DOC_STRING = """
     Examples:
         ```py
         >>> import torch
-        >>> from diffusers import StableDiffusionPipeline
+        >>> from src.diffusers import StableDiffusionPipeline
 
         >>> pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16)
         >>> pipe = pipe.to("cuda")
