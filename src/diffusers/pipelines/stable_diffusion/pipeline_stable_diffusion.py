@@ -672,10 +672,10 @@ class StableDiffusionPipeline(DiffusionPipeline):
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance or deep guidance
-                logger.warning("Starting shape of latents: " + str(latents.shape) + "\n")
+                print("Starting shape of latents: " + str(latents.shape) + "\n")
                 latent_model_input = torch.cat([latents] * 2) if (do_classifier_free_guidance or do_deep_guidance) else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-                logger.warning("Final shape of latents: " + str(latent_model_input.shape) + "\n")
+                print("Final shape of latents: " + str(latent_model_input.shape) + "\n")
 
                 # predict the noise residual
                 noise_pred = self.unet(
