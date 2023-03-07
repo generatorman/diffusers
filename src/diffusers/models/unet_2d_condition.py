@@ -579,7 +579,6 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         # 2. pre-process
         sample = self.conv_in(sample)
-        print("starting forward, sample shape: " + str(sample.shape))
 
         # 3. down
         down_block_res_samples = (sample,)
@@ -595,7 +594,6 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             else:
                 sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
 
-            print("down phase, sample shape: " + str(sample.shape))
             down_block_res_samples += res_samples
 
         if down_block_additional_residuals is not None:
@@ -618,8 +616,6 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 attention_mask=attention_mask,
                 cross_attention_kwargs=cross_attention_kwargs,
             )
-
-            print("mid completed, sample shape: " + str(sample.shape))
 
             # we chunk the output in two, then scale the second half (conditioned) using 
             # classifier free guidance formula, and then concatenate the two halves.
@@ -660,14 +656,12 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 sample = upsample_block(
                     hidden_states=sample, temb=emb, res_hidden_states_tuple=res_samples, upsample_size=upsample_size
                 )
-            print("up phase, sample shape: " + str(sample.shape))
 
         # 6. post-process
         if self.conv_norm_out:
             sample = self.conv_norm_out(sample)
             sample = self.conv_act(sample)
         sample = self.conv_out(sample)
-        print("completed forward, sample shape: " + str(sample.shape))
 
         if not return_dict:
             return (sample,)
