@@ -242,7 +242,7 @@ class DiffusionPipeline(ConfigMixin):
 
     def register_modules(self, **kwargs):
         # import it here to avoid circular import
-        from diffusers import pipelines
+        from src.diffusers import pipelines
 
         for name, module in kwargs.items():
             # retrieve library
@@ -739,7 +739,7 @@ class DiffusionPipeline(ConfigMixin):
         if pipeline_class.__name__ == "StableDiffusionInpaintPipeline" and version.parse(
             version.parse(config_dict["_diffusers_version"]).base_version
         ) <= version.parse("0.5.1"):
-            from diffusers import StableDiffusionInpaintPipeline, StableDiffusionInpaintPipelineLegacy
+            from src.diffusers import StableDiffusionInpaintPipeline, StableDiffusionInpaintPipelineLegacy
 
             pipeline_class = StableDiffusionInpaintPipelineLegacy
 
@@ -818,7 +818,7 @@ class DiffusionPipeline(ConfigMixin):
             )
 
         # import it here to avoid circular import
-        from diffusers import pipelines
+        from src.diffusers import pipelines
 
         # 3. Load each module in the pipeline
         for name, (library_name, class_name) in init_dict.items():
