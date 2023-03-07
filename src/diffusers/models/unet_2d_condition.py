@@ -619,7 +619,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 cross_attention_kwargs=cross_attention_kwargs,
             )
 
-            print.warning("mid completed, sample shape: " + str(sample.shape))
+            print("mid completed, sample shape: " + str(sample.shape))
 
             # we chunk the output in two, then scale the second half (conditioned) using 
             # classifier free guidance formula, and then concatenate the two halves.
