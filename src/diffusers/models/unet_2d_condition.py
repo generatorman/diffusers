@@ -637,6 +637,14 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
 
+            if do_deep_guidance:
+                # check size of first dimension is even
+                if list(res_samples.shape)[0] % 2 != 0:
+                    raise ValueError("Residuals shape is " + str(res_samples.shape) + " , first dim must be even!")
+                res_samples_uncond, res_samples_cond = torch.chunk(res_samples, 2)
+                res_samples_cond = res_samples_uncond + (res_samples_cond - res_samples_uncond) * deep_guidance_scale
+                res_samples = torch.cat([res_samples_uncond, res_samples_cond])
+
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
