@@ -631,19 +631,26 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             sample += mid_block_additional_residual
 
         # 5. up
+        # first we apply guidance on each tensor in the tuple of residuals
+        if do_deep_guidance:
+            # iterate over the tensors in the tuple
+            for i in range(len(down_block_res_samples)):
+                res_sample = down_block_res_samples[i]
+                # check size of first dimension (batches) is even
+                if res_sample.shape[0] % 2 != 0:
+                    raise ValueError("Residuals shape is " + str(res_sample.shape) + " , first dim must be even!")
+                res_sample_uncond, res_sample_cond = torch.chunk(res_sample, 2)
+                # scale the conditioned part of the residual using the classifier free guidance formula
+                res_sample_cond = res_sample_uncond + (res_sample_cond - res_sample_uncond) * deep_guidance_scale
+                res_sample = torch.cat([res_sample_uncond, res_sample_cond])
+                # tuples are immutable so we have to use slicing to replace the tensor
+                down_block_res_samples = down_block_res_samples[:i] + (res_sample,) + down_block_res_samples[i + 1:]
+
         for i, upsample_block in enumerate(self.up_blocks):
             is_final_block = i == len(self.up_blocks) - 1
 
             res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
-
-            if do_deep_guidance:
-                # check size of first dimension is even
-                if list(res_samples.shape)[0] % 2 != 0:
-                    raise ValueError("Residuals shape is " + str(res_samples.shape) + " , first dim must be even!")
-                res_samples_uncond, res_samples_cond = torch.chunk(res_samples, 2)
-                res_samples_cond = res_samples_uncond + (res_samples_cond - res_samples_uncond) * deep_guidance_scale
-                res_samples = torch.cat([res_samples_uncond, res_samples_cond])
 
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
