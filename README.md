@@ -1,3 +1,5 @@
+# PowerDiffusion Branch
+
 <p align="center">
     <br>
     <img src="./docs/source/en/imgs/diffusers_library.jpg" width="400"/>
